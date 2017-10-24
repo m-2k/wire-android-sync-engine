@@ -24,15 +24,15 @@ trait Usernames {
   def isUsernameValid(username: String) : UsernameValidation
   def generateUsernameFromName(name: String, context: Context): String
 
-  def validateUsernames(usernames: Array[String])
+  def validateUsernames(usernames: Array[String]): Unit
   def getValidatedUsernames: ValidatedUsernames
 }
 
 trait UsernamesRequestCallback{
   def onUsernameRequestResult(usernameValidation: Array[UsernameValidation]) : Unit = {}
-  def onRequestFailed(errorCode: Integer)
+  def onRequestFailed(errorCode: Integer): Unit
 }
 
 case class UsernameValidation(username: String, reason: UsernameValidationError) {
-  def isValid(): Boolean = reason == UsernameValidationError.NONE
+  def isValid: Boolean = reason == UsernameValidationError.NONE
 }

@@ -20,7 +20,6 @@ package com.waz.model
 import com.waz.api.NotificationsHandler.NotificationType
 import com.waz.db.Col._
 import com.waz.db.Dao
-import com.waz.service.ZMessaging
 import com.waz.service.ZMessaging.clock
 import com.waz.utils.wrappers.DBCursor
 import com.waz.utils.{EnumCodec, JsonDecoder, JsonEncoder}

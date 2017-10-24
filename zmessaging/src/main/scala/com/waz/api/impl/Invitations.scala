@@ -20,7 +20,7 @@ package com.waz.api.impl
 import com.waz.ZLog._
 import com.waz.ZLog.ImplicitTag._
 import com.waz.api.Invitations._
-import com.waz.client.{RegistrationClient, RegistrationClientImpl}
+import com.waz.client.RegistrationClient
 import com.waz.model.PersonalInvitationToken
 import com.waz.service.invitations.WebLink
 import com.waz.sync.client.InvitationClient.ConfirmedInvitation

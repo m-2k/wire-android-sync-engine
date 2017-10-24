@@ -19,7 +19,6 @@ package com.waz.api.impl
 
 import com.waz.api.UsernameValidation
 import com.waz.model.Handle
-import com.waz.threading.Threading
 import com.waz.ui.UiModule
 import com.waz.utils.events.{EventContext, Signal}
 import com.waz.ZLog.ImplicitTag._

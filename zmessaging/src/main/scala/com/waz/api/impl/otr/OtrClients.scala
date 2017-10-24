@@ -27,7 +27,7 @@ import com.waz.api.OtrClient.{DeleteCallback, ResetCallback}
 import com.waz.api.impl.{CoreList, ErrorResponse, UiObservable, UiSignal}
 import com.waz.api.{Location, OtrClientType, Verification, OtrClient => ApiClient}
 import com.waz.model.otr.{Client, ClientId}
-import com.waz.model.{AccountData, ConvId, UserId, otr}
+import com.waz.model.{ConvId, UserId, otr}
 import com.waz.service.AccountManager
 import com.waz.service.otr.OtrService
 import com.waz.sync.SyncResult
@@ -104,7 +104,6 @@ object OtrClients {
 }
 
 class OtrClient(val userId: UserId, val clientId: ClientId, var data: Client)(implicit ui: UiModule) extends api.OtrClient with UiObservable with SignalLoading {
-  import OtrClient._
   import Threading.Implicits.Background
 
   addLoader(_.storage.otrClientsStorage.signal(userId).map(_.clients.get(clientId))) { _ foreach update }

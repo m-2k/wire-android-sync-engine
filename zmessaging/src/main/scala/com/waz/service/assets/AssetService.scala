@@ -22,7 +22,6 @@ import java.io._
 import java.util.concurrent.atomic.AtomicReference
 
 import android.content.Context
-import android.graphics.{Bitmap => ABitmap}
 import android.os.Environment
 import com.waz.ZLog.ImplicitTag._
 import com.waz.ZLog._

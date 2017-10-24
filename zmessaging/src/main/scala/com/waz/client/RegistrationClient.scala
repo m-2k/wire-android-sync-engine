@@ -19,7 +19,7 @@ package com.waz.client
 
 import com.waz.ZLog._
 import com.waz.ZLog.ImplicitTag._
-import com.waz.api.impl.{Credentials, ErrorResponse, PhoneCredentials}
+import com.waz.api.impl.{ErrorResponse, PhoneCredentials}
 import com.waz.api.{KindOfAccess, KindOfVerification}
 import com.waz.client.RegistrationClientImpl.ActivateResult
 import com.waz.model._

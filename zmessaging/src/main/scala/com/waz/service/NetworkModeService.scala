@@ -30,8 +30,6 @@ import com.waz.threading.Threading
 import com.waz.utils.events.{EventContext, Signal}
 import com.waz.utils.returning
 
-import scala.util.control.NonFatal
-
 trait NetworkModeService {
   def networkMode: Signal[NetworkMode]
   def isOfflineMode: Boolean

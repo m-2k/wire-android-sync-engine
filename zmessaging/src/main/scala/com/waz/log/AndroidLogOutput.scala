@@ -17,7 +17,6 @@
  */
 package com.waz.log
 
-import com.waz.ZLog
 import com.waz.ZLog.LogTag
 
 import scala.concurrent.Future

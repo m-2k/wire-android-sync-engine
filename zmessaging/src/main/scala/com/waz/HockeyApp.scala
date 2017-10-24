@@ -31,7 +31,7 @@ object HockeyApp {
     override def saveException(t: Throwable, description: String)(implicit tag: LogTag) = {
       error(description, t)
       if (shouldReport(t)) {
-        ExceptionHandler.saveException(t, new CrashManagerListener {
+        ExceptionHandler.saveException(t, null, new CrashManagerListener {
           override def shouldAutoUploadCrashes: Boolean = true
           override def getUserID: String = Try(ZMessaging.context.getSharedPreferences("zprefs", Context.MODE_PRIVATE).getString("com.waz.device.id", "???")).getOrElse("????")
           override def getDescription: String = s"zmessaging - $tag - $description"

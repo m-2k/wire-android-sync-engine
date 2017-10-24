@@ -25,8 +25,7 @@ import com.waz.bitmap
 import com.waz.bitmap.BitmapUtils
 import com.waz.bitmap.gif.{Gif, GifAnimator}
 import com.waz.cache.LocalData
-import com.waz.content.Preferences.Preference
-import com.waz.content.{Preferences, UserPreferences}
+import com.waz.content.UserPreferences
 import com.waz.model.{AssetData, AssetId, Mime}
 import com.waz.service.{DefaultNetworkModeService, NetworkModeService, ZMessaging}
 import com.waz.service.assets.AssetService.BitmapResult
