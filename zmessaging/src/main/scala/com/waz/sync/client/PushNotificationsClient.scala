@@ -27,7 +27,7 @@ import com.waz.utils.JsonDecoder
 import com.waz.utils.JsonDecoder.arrayColl
 import com.waz.znet.ZNetClient.ErrorOrResponse
 import com.waz.znet.{JsonObjectResponse, _}
-import org.json.JSONObject
+import org.json.{JSONArray, JSONObject}
 import org.threeten.bp.Instant
 
 import scala.util.control.NonFatal
@@ -57,16 +57,16 @@ object PushNotificationsClient {
     Request.query(NotificationsPath, args: _*)
   }
 
-  case class LoadNotificationsResponse(notifications: Vector[PushNotification], hasMore: Boolean, beTime: Option[Instant])
+  case class LoadNotificationsResponse(notifications: Vector[PushNotificationEncoded], hasMore: Boolean, beTime: Option[Instant])
 
   object PagedNotificationsResponse {
 
     import com.waz.utils.JsonDecoder._
 
-    def unapply(response: ResponseContent): Option[(Vector[PushNotification], Boolean, Option[Instant])] = try response match {
+    def unapply(response: ResponseContent): Option[(Vector[PushNotificationEncoded], Boolean, Option[Instant])] = try response match {
       case JsonObjectResponse(js) if js.has("notifications") =>
-        Some((arrayColl[PushNotification, Vector](js.getJSONArray("notifications")), decodeBool('has_more)(js), decodeOptISOInstant('time)(js)))
-      case JsonArrayResponse(js) => Some((arrayColl[PushNotification, Vector](js), false, None))
+        Some((arrayColl[PushNotificationEncoded, Vector](js.getJSONArray("notifications")), decodeBool('has_more)(js), decodeOptISOInstant('time)(js)))
+      case JsonArrayResponse(js) => Some((arrayColl[PushNotificationEncoded, Vector](js), false, None))
       case _ => None
     } catch {
       case NonFatal(e) =>
@@ -86,7 +86,21 @@ object PushNotificationsClient {
         None
     }
   }
+
+  object NotificationsResponseEncoded {
+    def unapplySeq(response: ResponseContent): Option[Seq[PushNotificationEncoded]] = try response match {
+      case JsonObjectResponse(js) => Some(Vector(implicitly[JsonDecoder[PushNotificationEncoded]].apply(js)))
+      case JsonArrayResponse(js) => Some(arrayColl[PushNotificationEncoded, Vector](js))
+      case _ => None
+    } catch {
+      case NonFatal(e) =>
+        warn(s"couldn't parse push notification(s) from response: $response", e)
+        None
+    }
+  }
 }
+
+case class PushNotificationEncoded(id: Uid, events: JSONArray, transient: Boolean = false)
 
 case class PushNotification(id: Uid, events: Seq[Event], transient: Boolean = false) {
 
@@ -111,5 +125,15 @@ object PushNotification {
 
     override def apply(implicit js: JSONObject): PushNotification =
       PushNotification('id, array[Event](js.getJSONArray("payload")), 'transient)
+  }
+}
+
+object PushNotificationEncoded {
+  implicit lazy val NotificationDecoder: JsonDecoder[PushNotificationEncoded] =
+    new JsonDecoder[PushNotificationEncoded] {
+      import com.waz.utils.JsonDecoder._
+
+    override def apply(implicit js: JSONObject): PushNotificationEncoded =
+      PushNotificationEncoded('id, js.getJSONArray("payload"), 'transient)
   }
 }

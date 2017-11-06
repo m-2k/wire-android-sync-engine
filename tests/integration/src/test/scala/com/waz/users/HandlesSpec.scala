@@ -26,7 +26,6 @@ import scala.concurrent.duration._
 
 class HandlesSpec extends FeatureSpec with Matchers with GivenWhenThen with ProvisionedApiSpec {
   implicit val timeout: Timeout = 30.seconds
-  import com.waz.threading.Threading.Implicits.Background
   override val provisionFile: String = "/provision_handles.json"
 
   scenario("Test if handles are available") {
@@ -46,7 +45,7 @@ class HandlesSpec extends FeatureSpec with Matchers with GivenWhenThen with Prov
     var valid = false
     api.getUsernames.isUsernameAvailable("auto1_handle", new UsernamesRequestCallback{
       override def onUsernameRequestResult(usernameValidation: Array[UsernameValidation]): Unit = {
-        valid = usernameValidation(0).isValid()
+        valid = usernameValidation(0).isValid
       }
 
       override def onRequestFailed(errorCode: Integer): Unit = {
@@ -61,7 +60,7 @@ class HandlesSpec extends FeatureSpec with Matchers with GivenWhenThen with Prov
     var valid = false
     api.getUsernames.isUsernameAvailable("foo", new UsernamesRequestCallback{
       override def onUsernameRequestResult(usernameValidation: Array[UsernameValidation]): Unit = {
-        valid = usernameValidation(0).isValid()
+        valid = usernameValidation(0).isValid
       }
 
       override def onRequestFailed(errorCode: Integer): Unit = {

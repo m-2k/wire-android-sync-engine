@@ -87,7 +87,7 @@ class PushNotificationsClientSpec extends AndroidFreeSpec {
   feature("Load notifications") {
     scenario("load from start"){
 
-      val not1 = PushNotification.NotificationDecoder(new JSONObject(Notification1))
+      val not1 = PushNotificationEncoded.NotificationDecoder(new JSONObject(Notification1))
 
       mockRequest(
         PushNotificationsClient.notificationsPath(None, clientId, PushNotificationsClient.PageSize),
@@ -109,8 +109,8 @@ class PushNotificationsClientSpec extends AndroidFreeSpec {
     scenario("load from start in pages"){
       val pageSize = 1
 
-      val not1 = PushNotification.NotificationDecoder(new JSONObject(Notification1))
-      val not2 = PushNotification.NotificationDecoder(new JSONObject(Notification2))
+      val not1 = PushNotificationEncoded.NotificationDecoder(new JSONObject(Notification1))
+      val not2 = PushNotificationEncoded.NotificationDecoder(new JSONObject(Notification2))
 
       mockRequest(
         PushNotificationsClient.notificationsPath(None, clientId, pageSize),

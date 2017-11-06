@@ -51,6 +51,7 @@ import scala.concurrent.duration._
 trait OtrService {
   def decryptCloudMessage(data: Array[Byte], mac: Array[Byte]): Future[Option[JSONObject]]
   def decryptAssetData(assetId: AssetId, otrKey: Option[AESKey], sha: Option[Sha256], data: Option[Array[Byte]], encryption: Option[EncryptionAlgorithm]): Option[Array[Byte]]
+  def eventTransformer(events: Vector[Event]): Future[Vector[Event]]
 }
 
 class OtrServiceImpl(selfUserId: UserId, clientId: ClientId, val clients: OtrClientsService, push: PushService,
@@ -68,7 +69,7 @@ class OtrServiceImpl(selfUserId: UserId, clientId: ClientId, val clients: OtrCli
     Signal.wrap(sessions.onCreateFromMessage).throttle(15.seconds) { _ => clients.requestSyncIfNeeded(1.hour) }
   }
 
-  def eventTransformer(events: Vector[Event]): Future[Vector[Event]] = {
+  override def eventTransformer(events: Vector[Event]): Future[Vector[Event]] = {
     @tailrec def transform(es: Vector[Event], accu: Vector[Future[Vector[Event]]]): Vector[Future[Vector[Event]]] =
       if (es.isEmpty) accu
       else {

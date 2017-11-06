@@ -33,7 +33,9 @@ import org.threeten.bp.{Duration, Instant}
 
 trait ReceivedPushStorage extends CachedStorage[Uid, ReceivedPushData]
 
-class ReceivedPushStorageImpl(context: Context, storage: Database) extends CachedStorageImpl[Uid, ReceivedPushData](new TrimmingLruCache(context, Fixed(100)), storage)(ReceivedPushDataDao) with ReceivedPushStorage
+class ReceivedPushStorageImpl(context: Context, storage: Database)
+  extends CachedStorageImpl[Uid, ReceivedPushData](new TrimmingLruCache(context, Fixed(100)), storage)(ReceivedPushDataDao)
+    with ReceivedPushStorage
 
 /**
   * @param receivedAt instant the push notification was received
@@ -90,6 +92,6 @@ object ReceivedPushData {
 
 case class MissedPushes(time:            Instant,
                         countMissed:     Int,
-                        inBackground:    Boolean, //will help rull out false-positivie - missed pushes in foreground may be legitimate misses!
+                        inBackground:    Boolean, //will help rule out false-positives - missed pushes in foreground may be legitimate misses!
                         networkMode:     NetworkMode,
                         networkOperator: String)

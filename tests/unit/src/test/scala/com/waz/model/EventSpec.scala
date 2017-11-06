@@ -17,15 +17,19 @@
  */
 package com.waz.model
 
+import java.util.Date
+
 import com.waz.model.Event.EventDecoder
+import com.waz.model.nano.Messages
 import com.waz.model.otr.ClientId
 import com.waz.utils.JsonDecoder
 import org.json.JSONObject
 import org.scalatest._
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 
-@Ignore class EventSpec extends FeatureSpec with Matchers with BeforeAndAfter with GivenWhenThen with PropertyChecks with GeneratorDrivenPropertyChecks with RobolectricTests {
+class EventSpec extends FeatureSpec with Matchers with BeforeAndAfter with GivenWhenThen with PropertyChecks with GeneratorDrivenPropertyChecks with RobolectricTests {
   import EventSpec._
+  import MessageEvent._
 
   feature("Event parsing") {
     scenario("parse UserConnectionEvent") {
@@ -78,6 +82,67 @@ import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
           ev.recipient shouldEqual ClientId("ff23d4857147e00c")
           ev.from shouldEqual UserId("dbf13c1b-b7f5-49fd-988b-9eed329d43a8")
           ev.imageData should be('defined)
+        case e => fail(s"unexpected event: $e")
+      }
+    }
+
+    scenario("encode/decode GenericMessageEvent") {
+      val msg = GenericMessageEvent(RConvId(), new Date(), UserId(), new Messages.GenericMessage)
+      EventDecoder(MessageEventEncoder(msg)) match {
+        case ev: GenericMessageEvent =>
+          ev.convId shouldEqual msg.convId
+          ev.content.equals(msg.content)
+          ev.from shouldEqual msg.from
+          ev.time shouldEqual msg.time
+        case e => fail(s"unexpected event: $e")
+      }
+    }
+
+    scenario("encode/decode CallMessageEvent") {
+      val msg = CallMessageEvent(RConvId(), new Date(), UserId(), ClientId(), "")
+      EventDecoder(MessageEventEncoder(msg)) match {
+        case ev: CallMessageEvent =>
+          ev.convId shouldEqual msg.convId
+          ev.time shouldEqual msg.time
+          ev.from shouldEqual msg.from
+          ev.sender shouldEqual msg.sender
+          ev.content shouldEqual msg.content
+        case e => fail(s"unexpected event: $e")
+      }
+    }
+
+    scenario("encode/decode OtrErrorEvent(duplicate)") {
+      val msg = OtrErrorEvent(RConvId(), new Date(), UserId(), Duplicate)
+      EventDecoder(MessageEventEncoder(msg)) match {
+        case ev: OtrErrorEvent =>
+          ev.convId shouldEqual msg.convId
+          ev.time shouldEqual msg.time
+          ev.from shouldEqual msg.from
+          ev.error shouldEqual msg.error
+        case e => fail(s"unexpected event: $e")
+      }
+    }
+
+    scenario("encode/decode OtrErrorEvent(DecryptionError)") {
+      val msg = OtrErrorEvent(RConvId(), new Date(), UserId(), DecryptionError("error", UserId(), ClientId()))
+      EventDecoder(MessageEventEncoder(msg)) match {
+        case ev: OtrErrorEvent =>
+          ev.convId shouldEqual msg.convId
+          ev.time shouldEqual msg.time
+          ev.from shouldEqual msg.from
+          ev.error shouldEqual msg.error
+        case e => fail(s"unexpected event: $e")
+      }
+    }
+
+    scenario("encode/decode OtrErrorEvent(IdentityChanged)") {
+      val msg = OtrErrorEvent(RConvId(), new Date(), UserId(), IdentityChangedError(UserId(), ClientId()))
+      EventDecoder(MessageEventEncoder(msg)) match {
+        case ev: OtrErrorEvent =>
+          ev.convId shouldEqual msg.convId
+          ev.time shouldEqual msg.time
+          ev.from shouldEqual msg.from
+          ev.error shouldEqual msg.error
         case e => fail(s"unexpected event: $e")
       }
     }
