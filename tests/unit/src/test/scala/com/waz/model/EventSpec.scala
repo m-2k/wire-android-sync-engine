@@ -60,32 +60,6 @@ class EventSpec extends FeatureSpec with Matchers with BeforeAndAfter with Given
       }
     }
 
-    scenario("parse otr asset event") {
-      EventDecoder(new JSONObject(OtrAssetEvent)) match {
-        case ev: OtrAssetEvent =>
-          ev.dataId shouldEqual RAssetId("fb325cac-d2d8-4afe-b236-35ac438a9e83")
-          ev.convId shouldEqual RConvId("74f85659-4677-4b17-91dd-d49cd703b234")
-          ev.sender shouldEqual ClientId("b79a049114ff051e")
-          ev.recipient shouldEqual ClientId("650d1a5efc422126")
-          ev.from shouldEqual UserId("bf59ae41-3dca-4099-b871-ce5940939166")
-          ev.imageData should be('empty)
-        case e => fail(s"unexpected event: $e")
-      }
-    }
-
-    scenario("parse otr asset event with data") {
-      EventDecoder(new JSONObject(OtrAssetEvent1)) match {
-        case ev: OtrAssetEvent =>
-          ev.dataId shouldEqual RAssetId("2e8c9b0e-9a98-41aa-bf0e-f1395a3b5b39")
-          ev.convId shouldEqual RConvId("e74e62ea-1bcd-4582-ab12-bf7a0ff43931")
-          ev.sender shouldEqual ClientId("80b8a91aeb4b4dd")
-          ev.recipient shouldEqual ClientId("ff23d4857147e00c")
-          ev.from shouldEqual UserId("dbf13c1b-b7f5-49fd-988b-9eed329d43a8")
-          ev.imageData should be('defined)
-        case e => fail(s"unexpected event: $e")
-      }
-    }
-
     scenario("encode/decode GenericMessageEvent") {
       val msg = GenericMessageEvent(RConvId(), new Date(), UserId(), new Messages.GenericMessage)
       EventDecoder(MessageEventEncoder(msg)) match {

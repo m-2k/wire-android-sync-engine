@@ -108,12 +108,6 @@ class OtrServiceImpl(selfUserId: UserId, clientId: ClientId, val clients: OtrCli
             Some(GenericMessageEvent(conv, time, from, msg).withLocalTime(ev.localTime))
         }
 
-      case ev @ OtrAssetEvent(conv, time, from, sender, `clientId`, dataId, _, data) =>
-        decryptOtrEvent(ev) map {
-          case Left(Duplicate) => None
-          case Left(error) => Some(OtrErrorEvent(conv, time, from, error))
-          case Right(msg) => Some(GenericAssetEvent(conv, time, from, msg, dataId, data).withLocalTime(ev.localTime))
-        }
       case ev: OtrEvent if ev.recipient != clientId =>
         verbose(s"Skipping otr event not intended for us: $ev")
         Future successful None

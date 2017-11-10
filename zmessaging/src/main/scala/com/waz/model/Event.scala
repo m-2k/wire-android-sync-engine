@@ -133,8 +133,6 @@ sealed trait OtrEvent extends ConversationEvent {
 }
 case class OtrMessageEvent(convId: RConvId, time: Date, from: UserId, sender: ClientId, recipient: ClientId, ciphertext: Array[Byte], externalData: Option[Array[Byte]] = None) extends OtrEvent
 
-case class OtrAssetEvent(convId: RConvId, time: Date, from: UserId, sender: ClientId, recipient: ClientId, dataId: RAssetId, ciphertext: Array[Byte], imageData: Option[Array[Byte]]) extends OtrEvent
-
 case class ConversationState(archived: Option[Boolean] = None, archiveTime: Option[Instant] = None, muted: Option[Boolean] = None, muteTime: Option[Instant] = None)
 
 object ConversationState {
@@ -233,9 +231,6 @@ object ConversationEvent {
     def otrMessageEvent(convId: RConvId, time: Date, from: UserId)(implicit data: JSONObject) =
       OtrMessageEvent(convId, time, from, ClientId('sender), ClientId('recipient), decodeBytes('text), decodeOptString('data).map(decodeBytes))
 
-    def otrAssetEvent(convId: RConvId, time: Date, from: UserId)(implicit data: JSONObject) =
-      OtrAssetEvent(convId, time, from, ClientId('sender), ClientId('recipient), RAssetId('id), decodeBytes('key), decodeOptString('data).map(decodeBytes))
-
     def genericAssetEvent(convId: RConvId, time: Date, from: UserId, content: GenericMessage,
                           dataId: RAssetId)(implicit js: JSONObject) =
       GenericAssetEvent(convId, time, from, content, dataId, decodeOptString('data).map(decodeBytes))
@@ -260,8 +255,6 @@ object ConversationEvent {
         case "conversation.typing" =>
           TypingEvent('conversation, 'time, 'from, isTyping = data.fold(false)(data => decodeString('status)(data) == "started"))
         case "conversation.otr-message-add" => otrMessageEvent('conversation, 'time, 'from)(data.get)
-          //TODO remove after v2 transition period is over - no more clients should be sending v2
-        case "conversation.otr-asset-add" => otrAssetEvent('conversation, 'time, 'from)(data.get)
         case "conversation.generic-message" => GenericMessageEvent('convId, 'time, 'from, 'content)
         case "conversation.generic-asset" => genericAssetEvent('convId, 'time, 'from, 'content, 'dataId)
         case "conversation.otr-error" => otrErrorEvent('convId, 'time, 'from)
