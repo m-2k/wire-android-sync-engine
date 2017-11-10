@@ -17,10 +17,11 @@
  */
 package com.waz.service
 
+import com.waz.api.impl.ErrorResponse
 import com.waz.api.{KindOfAccess, KindOfVerification}
 import com.waz.client.RegistrationClient
 import com.waz.client.RegistrationClientImpl.ActivateResult
-import com.waz.content.AccountsStorage
+import com.waz.content.{AccountsStorage, GlobalPreferences}
 import com.waz.model._
 import com.waz.specs.AndroidFreeSpec
 import com.waz.testutils.{TestGlobalPreferences, TestUserPreferences}
@@ -28,16 +29,19 @@ import com.waz.threading.CancellableFuture
 import com.waz.utils.events.{EventStream, Signal}
 import com.waz.znet.AuthenticationManager.{Cookie, Token}
 import com.waz.znet.LoginClient
+import org.scalatest.Inside
 
 import scala.concurrent.Future
 
-class AccountsServiceSpec extends AndroidFreeSpec {
+class AccountsServiceSpec extends AndroidFreeSpec with Inside {
 
   private val globalModule = mock[GlobalModule]
   private val storage      = mock[AccountsStorage]
   private val phoneNumbers = mock[PhoneNumberService]
   private val regClient    = mock[RegistrationClient]
   private val loginClient  = mock[LoginClient]
+
+  val prefs = new TestGlobalPreferences()
 
   feature("Phone registration") {
 
@@ -278,9 +282,143 @@ class AccountsServiceSpec extends AndroidFreeSpec {
 
   }
 
-  def getAccountService: AccountsServiceImpl = {
-    val prefs = new TestGlobalPreferences()
+  feature("Team creation") {
 
+    scenario("create new account with pending team name") {
+      import com.waz.threading.Threading.Implicits.Background
+      val teamName = "team_name"
+
+      (storage.findByPendingTeamName _).expects(teamName).once().returning(Future.successful(None))
+      (storage.insert _).expects(*).once().onCall { acc: AccountData =>
+        if (!acc.pendingTeamName.contains(teamName)) fail("Team name did not match") else Future.successful(acc)
+      }
+
+      val service = getAccountService
+
+      val idsMatch = for {
+        id <- service.createTeamAccount(teamName)
+        pref <- prefs.preference(GlobalPreferences.CurrentAccountPref).apply()
+      } yield pref.contains(id)
+
+      result(idsMatch) shouldEqual true
+    }
+
+    scenario("Request confirmation code on current account should set pending email if successful") {
+      val teamName = "team_name"
+
+      var account = AccountData(id = AccountId(), pendingTeamName = Some(teamName))
+      (storage.findByPendingTeamName _).expects(teamName).once().returning(Future.successful(Some(account)))
+
+      val service = getAccountService
+      service.createTeamAccount(teamName)
+
+      val email = EmailAddress("test@test.com")
+
+      (storage.update _).expects(account.id, *).once.onCall{ (_, updater) =>
+        account = updater(account)
+        Future.successful(Some((account, account)))
+      }
+
+      (regClient.requestEmailConfirmationCode _).expects(email).returning(CancellableFuture.successful(ActivateResult.Success))
+      result(service.requestActivationCode(email)) shouldEqual Right(())
+
+      account.pendingEmail should contain(email)
+    }
+
+    scenario("Verify confirmation code sets code if result successful") {
+      val teamName = "team_name"
+      val code = ConfirmationCode("123456")
+      val email = EmailAddress("test@test.com")
+
+      var account = AccountData(id = AccountId(), pendingTeamName = Some(teamName), pendingEmail = Some(email))
+      (storage.findByPendingTeamName _).expects(teamName).once().returning(Future.successful(Some(account)))
+      val service = getAccountService
+      service.createTeamAccount(teamName)
+
+      (storage.get _).expects(account.id).returning(Future.successful(Some(account)))
+      (storage.update _).expects(account.id, *).once.onCall{ (_, updater) =>
+        account = updater(account)
+        Future.successful(Some((account, account)))
+      }
+
+      (regClient.verifyEmail _).expects(email, code).returning(CancellableFuture.successful(Right(())))
+      result(service.verify(code)) shouldEqual Right(())
+
+      account.code should contain(code)
+    }
+
+    scenario("Verify confirmation code does not set code if unsuccessful") {
+      val teamName = "team_name"
+      val code = ConfirmationCode("123456")
+      val email = EmailAddress("test@test.com")
+
+      var account = AccountData(id = AccountId(), pendingTeamName = Some(teamName), pendingEmail = Some(email))
+      (storage.findByPendingTeamName _).expects(teamName).once().returning(Future.successful(Some(account)))
+      val service = getAccountService
+      service.createTeamAccount(teamName)
+
+      (storage.get _).expects(account.id).returning(Future.successful(Some(account)))
+      (storage.update _).expects(account.id, *).never()
+
+      val error = ErrorResponse(1, "some error", "")
+      (regClient.verifyEmail _).expects(email, code).returning(CancellableFuture.successful(Left(error)))
+      result(service.verify(code)) shouldEqual Left(error)
+
+      account.code shouldBe empty
+    }
+
+    scenario("Register account") {
+      val teamName = "team_name"
+      val email = EmailAddress("test@test.com")
+      val pw    = "password"
+      val name  = "account_name"
+
+      var account = AccountData(
+        id              = AccountId(),
+        pendingTeamName = Some(teamName),
+        name            = Some(name),
+        pendingEmail    = Some(email),
+        password        = Some(pw),
+        code            = Some(ConfirmationCode("123456"))
+      )
+
+      (storage.findByPendingTeamName _).expects(teamName).once().returning(Future.successful(Some(account)))
+
+      val service = getAccountService
+      service.createTeamAccount(teamName)
+
+      //see https://staging-nginz-https.zinfra.io/swagger-ui/#!/users/register for expected return details
+      val expectedUserInfo = UserInfo(
+        id   = UserId("user_id"),
+        name = account.name
+      )
+
+      val cookie = Cookie("cookie")
+
+      (storage.get _).expects(account.id).returning(Future.successful(Some(account)))
+
+      (storage.update _).expects(*, *).once.onCall{ (_, updater) =>
+        account = updater(account)
+        Future.successful(Some((account, account)))
+      }
+
+      (regClient.registerTeamAccount _).expects(account).returning(CancellableFuture.successful(Right((expectedUserInfo, Some(cookie)))))
+      result(service.register()) shouldEqual Right(())
+
+      inside (account) { case a =>
+        a.teamId          shouldEqual Left(()) //team should remain undefined - we will fetch this before creating ZMS
+        a.pendingTeamName shouldEqual None
+        a.name            shouldEqual Some(name)
+        a.email           shouldEqual Some(email)
+        a.pendingEmail    shouldEqual None
+        a.password        shouldEqual Some(pw)
+        a.cookie          shouldEqual Some(cookie)
+        a.userId          shouldEqual Some(expectedUserInfo.id)
+      }
+    }
+  }
+
+  def getAccountService: AccountsServiceImpl = {
     (globalModule.accountsStorage _).expects().anyNumberOfTimes.returning(storage)
     (globalModule.phoneNumbers _).expects().anyNumberOfTimes.returning(phoneNumbers)
     (globalModule.regClient _).expects().anyNumberOfTimes.returning(regClient)

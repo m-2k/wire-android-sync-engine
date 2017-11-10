@@ -18,10 +18,10 @@
 package com.waz.model
 
 import android.util.Base64
-import com.waz.ZLog._
 import com.waz.ZLog.ImplicitTag._
+import com.waz.ZLog._
 import com.waz.api.ClientRegistrationState
-import com.waz.api.impl.{Credentials, EmailCredentials, PhoneCredentials}
+import com.waz.api.impl.{Credentials, EmailCredentials}
 import com.waz.db.Col._
 import com.waz.db.{Col, Dao, DbTranslator}
 import com.waz.model.AccountData.{PermissionsMasks, TriTeamId}
